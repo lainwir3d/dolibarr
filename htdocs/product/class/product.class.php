@@ -2949,14 +2949,19 @@ class Product extends CommonObject
 			// If stock decrease is on invoice validation, the theorical stock continue to
 			// count the orders to ship in theorical stock when some are already removed b invoice validation.
 			// If option DECREASE_ONLY_UNINVOICEDPRODUCTS is on, we make a compensation.
-			if (!empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+			if (!empty($conf->global->STOCK_CALCULATE_ON_BILL) || !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL) ) {
 				if (!empty($conf->global->DECREASE_ONLY_UNINVOICEDPRODUCTS)) {
 					$adeduire = 0;
 					$sql = "SELECT sum(fd.qty) as count FROM ".MAIN_DB_PREFIX."facturedet fd ";
 					$sql .= " JOIN ".MAIN_DB_PREFIX."facture f ON fd.fk_facture = f.rowid ";
 					$sql .= " JOIN ".MAIN_DB_PREFIX."element_element el ON el.fk_target = f.rowid and el.targettype = 'facture' and sourcetype = 'commande'";
 					$sql .= " JOIN ".MAIN_DB_PREFIX."commande c ON el.fk_source = c.rowid ";
-					$sql .= " WHERE c.fk_statut IN (".$this->db->sanitize($filtrestatut).") AND c.facture = 0 AND fd.fk_product = ".((int) $this->id);
+					
+					if(!empty($conf->global->STOCK_CALCULATE_ON_BILL)){
+						$sql .= " WHERE c.fk_statut IN (".$this->db->sanitize($filtrestatut).") AND c.facture = 0 AND fd.fk_product = ".((int) $this->id);
+					}else if(!empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)){
+						$sql .= " WHERE c.fk_statut IN (".$this->db->sanitize($filtrestatut).") AND c.facture = 0 AND fd.fk_product = ".((int) $this->id)." AND f.type = ".Facture::TYPE_CREDIT_NOTE;
+					}
 					dol_syslog(__METHOD__.":: sql $sql", LOG_NOTICE);
 
 					$resql = $this->db->query($sql);
@@ -5306,11 +5311,16 @@ class Product extends CommonObject
 		// Stock decrease mode
 		if (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT) || !empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)) {
 			$this->stock_theorique -= ($stock_commande_client - $stock_sending_client);
-		} elseif (!empty($conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER)) {
+			if(!empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) { // this is not exclusive with STOCK_CALCULATE_ON_SHIPMENT(_CLOSE)
+				$this->stock_theorique -= $stock_commande_client;
+			}
+
+		}elseif (!empty($conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER)) {
 			$this->stock_theorique += 0;
-		} elseif (!empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+		}elseif (!empty($conf->global->STOCK_CALCULATE_ON_BILL) || !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) {
 			$this->stock_theorique -= $stock_commande_client;
 		}
+
 		// Stock Increase mode
 		if (!empty($conf->global->STOCK_CALCULATE_ON_RECEPTION) || !empty($conf->global->STOCK_CALCULATE_ON_RECEPTION_CLOSE)) {
 			$this->stock_theorique += ($stock_commande_fournisseur - $stock_reception_fournisseur);

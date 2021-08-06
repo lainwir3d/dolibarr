@@ -627,7 +627,7 @@ if (empty($reshook)) {
 		}
 
 		// Check for warehouse
-		if ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+		if ( ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) || ($object->type == Facture::TYPE_CREDIT_NOTE && !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) ) {
 			$qualified_for_stock_change = 0;
 			if (empty($conf->global->STOCK_SUPPORTS_SERVICES)) {
 				$qualified_for_stock_change = $object->hasProductsOrServices(2);
@@ -687,7 +687,7 @@ if (empty($reshook)) {
 		$object->fetch_thirdparty();
 
 		// Check parameters
-		if ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+		if ( ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) || ($object->type == Facture::TYPE_CREDIT_NOTE && !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) ) {
 			$qualified_for_stock_change = 0;
 			if (empty($conf->global->STOCK_SUPPORTS_SERVICES)) {
 				$qualified_for_stock_change = $object->hasProductsOrServices(2);
@@ -3894,7 +3894,12 @@ if ($action == 'create') {
 		$text = $langs->trans('ConfirmDeleteBill', $object->ref);
 		$formquestion = array();
 
-		if ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL) && $object->statut >= 1) {
+		if ($object->statut >= 1 && 
+			( 
+				($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) ||
+				($object->type == Facture::TYPE_CREDIT_NOTE && !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL))
+			)
+		) {
 			$qualified_for_stock_change = 0;
 			if (empty($conf->global->STOCK_SUPPORTS_SERVICES)) {
 				$qualified_for_stock_change = $object->hasProductsOrServices(2);
@@ -3967,7 +3972,7 @@ if ($action == 'create') {
 		}
 		$formquestion = array();
 
-		if ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+		if ( ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) || ($object->type == Facture::TYPE_CREDIT_NOTE && !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) ) {
 			$qualified_for_stock_change = 0;
 			if (empty($conf->global->STOCK_SUPPORTS_SERVICES)) {
 				$qualified_for_stock_change = $object->hasProductsOrServices(2);
@@ -4009,7 +4014,7 @@ if ($action == 'create') {
 		$text = $langs->trans('ConfirmUnvalidateBill', $object->ref);
 		$formquestion = array();
 
-		if ($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+		if (($object->type != Facture::TYPE_DEPOSIT && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) || ($object->type == Facture::TYPE_CREDIT_NOTE && !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) ) {
 			$qualified_for_stock_change = 0;
 			if (empty($conf->global->STOCK_SUPPORTS_SERVICES)) {
 				$qualified_for_stock_change = $object->hasProductsOrServices(2);

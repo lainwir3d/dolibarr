@@ -1199,7 +1199,12 @@ if ($action == 'remove_file') {
 if (!$error && $massaction == 'validate' && $permissiontoadd) {
 	$objecttmp = new $objectclass($db);
 
-	if (($objecttmp->element == 'facture' || $objecttmp->element == 'invoice') && !empty($conf->stock->enabled) && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+	if ( !empty($conf->stock->enabled) && ($objecttmp->element == 'facture' || $objecttmp->element == 'invoice') &&
+		(
+			!empty($conf->global->STOCK_CALCULATE_ON_BILL ||
+			!empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)
+		) 
+	) {
 		$langs->load("errors");
 		setEventMessages($langs->trans('ErrorMassValidationNotAllowedWhenStockIncreaseOnAction'), null, 'errors');
 		$error++;

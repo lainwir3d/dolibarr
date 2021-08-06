@@ -75,6 +75,7 @@ OrderDispatch=Item receipts
 RuleForStockManagementDecrease=Choose Rule for automatic stock decrease (manual decrease is always possible, even if an automatic decrease rule is activated)
 RuleForStockManagementIncrease=Choose Rule for automatic stock increase (manual increase is always possible, even if an automatic increase rule is activated)
 DeStockOnBill=Decrease real stocks on validation of customer invoice/credit note
+DeStockOnCreditBill=Decrease (increase) real stocks on validation of customer credit (only) note
 DeStockOnValidateOrder=Decrease real stocks on validation of sales order
 DeStockOnShipment=Decrease real stocks on shipping validation
 DeStockOnShipmentOnClosing=Decrease real stocks when shipping is set to closed

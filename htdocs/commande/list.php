@@ -920,7 +920,7 @@ if ($resql) {
 		print $langs->trans('ValidateInvoices');
 		print '</td>';
 		print '<td>';
-		if (!empty($conf->stock->enabled) && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
+		if (!empty($conf->stock->enabled) && (!empty($conf->global->STOCK_CALCULATE_ON_BILL) || !empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL) ) ) {
 			print $form->selectyesno('validate_invoices', 0, 1, 1);
 			print ' ('.$langs->trans("AutoValidationNotPossibleWhenStockIsDecreasedOnInvoiceValidation").')';
 		} else {
