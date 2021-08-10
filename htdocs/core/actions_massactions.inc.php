@@ -1201,7 +1201,7 @@ if (!$error && $massaction == 'validate' && $permissiontoadd) {
 
 	if ( !empty($conf->stock->enabled) && ($objecttmp->element == 'facture' || $objecttmp->element == 'invoice') &&
 		(
-			!empty($conf->global->STOCK_CALCULATE_ON_BILL ||
+			!empty($conf->global->STOCK_CALCULATE_ON_BILL) ||
 			!empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)
 		) 
 	) {
