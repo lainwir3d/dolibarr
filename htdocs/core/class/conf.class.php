@@ -615,6 +615,8 @@ class Conf
 
 			if (!empty($this->productbatch->enabled)) {
 				$this->global->STOCK_CALCULATE_ON_BILL = 0;
+				$this->global->STOCK_CALCULATE_ON_INVOICE_BILL = 0;
+				$this->global->STOCK_CALCULATE_ON_CREDIT_BILL = 0;
 				$this->global->STOCK_CALCULATE_ON_VALIDATE_ORDER = 0;
 				$this->global->STOCK_CALCULATE_ON_SHIPMENT = 1;
 				$this->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE = 0;

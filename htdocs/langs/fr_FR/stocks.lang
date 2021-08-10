@@ -77,6 +77,7 @@ RuleForStockManagementDecrease=Règle de gestion des décrémentations automatiq
 RuleForStockManagementIncrease=Règle de gestion des incrémentations de stock (l'incrémentation manuelle est toujours possible, même si une incrémentation automatique est activée)
 DeStockOnBill=Décrémenter les stocks physiques sur validation des factures/avoirs clients
 DeStockOnValidateOrder=Décrémenter les stocks physiques sur validation des commandes clients
+DeStockOnCreditBill=Décrémenter (incrémenter) les stocks physiques sur validation des avoirs (uniquement) clients
 DeStockOnShipment=Décrémenter les stocks physiques sur validation des expéditions
 DeStockOnShipmentOnClosing=Décrémenter les stocks physiques au classement "clôturée" de l'expédition
 ReStockOnBill=Incrémenter les stocks physiques sur validation des factures/avoirs fournisseurs
