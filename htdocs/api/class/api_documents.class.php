@@ -503,7 +503,7 @@ class Documents extends DolibarrApi
 				if ($result < 0) {
 					throw new RestException(503, 'Error when retrieve ecm list : '.$this->db->lasterror());
 				} elseif (is_array($ecmfile->lines) && count($ecmfile->lines) > 0) {
-					$filearray['ecmfiles_infos'] = $ecmfile->lines;
+					//$filearray['ecmfiles_infos'] = $ecmfile->lines;
 				}
 			}
 		}
