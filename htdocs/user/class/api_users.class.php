@@ -152,7 +152,8 @@ class Users extends DolibarrApi
 	 */
 	public function get($id, $includepermissions = 0)
 	{
-		if (empty(DolibarrApiAccess::$user->rights->user->user->lire) && empty(DolibarrApiAccess::$user->admin) && $id != 0 && DolibarrApiAccess::$user->id != $id) {
+		if (empty(DolibarrApiAccess::$user->rights->user->user->lire) && empty(DolibarrApiAccess::$user->admin) &&
+			!(!empty(DolibarrApiAccess::$user->rights->user->self->creer) && (DolibarrApiAccess::$user->id == $id))) {
 			throw new RestException(401, 'Not allowed');
 		}
 
@@ -173,6 +174,7 @@ class Users extends DolibarrApi
 			$this->useraccount->getRights();
 		}
 
+		$this->useraccount->societe_id = $this->useraccount->socid;
 		return $this->_cleanObjectDatas($this->useraccount);
 	}
 
@@ -294,6 +296,8 @@ class Users extends DolibarrApi
 
 		$this->useraccount->user_group_list = $this->_cleanUserGroupListDatas($userGroupList);
 
+		$this->useraccount->societe_id = $this->useraccount->socid;
+		//var_dump($this->useraccount); die();
 		return $this->_cleanObjectDatas($this->useraccount);
 	}
 
