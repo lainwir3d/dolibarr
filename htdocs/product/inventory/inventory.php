@@ -885,6 +885,11 @@ if ($object->id > 0) {
 	print '<td class="right">';
 	print $form->textwithpicto($langs->trans("RealQty"), $langs->trans("InventoryRealQtyHelp"));
 	print '</td>';
+
+	print '<td class="right">';
+	print $langs->trans("Delta");
+	print '</td>';
+
 	if ($object->status == $object::STATUS_DRAFT || $object->status == $object::STATUS_VALIDATED) {
 		// Actions or link to stock movement
 		print '<td class="center">';
@@ -916,6 +921,7 @@ if ($object->id > 0) {
 		print '<input type="text" name="qtytoadd" class="maxwidth75" value="">';
 		print '</td>';
 		// Actions
+		print '<td></td>';
 		print '<td class="center">';
 		print '<input type="submit" class="button paddingright" name="addline" value="'.$langs->trans("Add").'">';
 		print '</td>';
@@ -995,9 +1001,7 @@ if ($object->id > 0) {
 			print '<input type="hidden" name="stock_qty_'.$obj->rowid.'" value="'.$valuetoshow.'">';
 			print '</td>';
 
-			// Real quantity
 			if ($object->status == $object::STATUS_DRAFT || $object->status == $object::STATUS_VALIDATED) {
-				print '<td class="right">';
 				$qty_view = GETPOST("id_".$obj->rowid) && price2num(GETPOST("id_".$obj->rowid), 'MS') >= 0 ? GETPOST("id_".$obj->rowid) : $obj->qty_view;
 
 				//if (!$hasinput && $qty_view !== null && $obj->qty_stock != $qty_view) {
@@ -1005,10 +1009,18 @@ if ($object->id > 0) {
 					$hasinput = true;
 				}
 
+				// Real quantity
+				print '<td class="right">';
 				print '<a id="undochangesqty_'.$obj->rowid.'" href="#" class="undochangesqty reposition marginrightonly" title="'.dol_escape_htmltag($langs->trans("Clear")).'">';
 				print img_picto('', 'eraser', 'class="opacitymedium"');
 				print '</a>';
 				print '<input type="text" class="maxwidth75 right realqty" name="id_'.$obj->rowid.'" id="id_'.$obj->rowid.'_input" value="'.$qty_view.'">';
+				print '</td>';
+
+				// Delta quantity
+				$dt = $obj->qty_view - $obj->qty_stock;
+				print '<td class="maxwidth75 right deltaqty" id="id_'.$obj->rowid.'">';
+				if($dt != 0) print $dt;
 				print '</td>';
 
 				// Picto delete line
@@ -1018,9 +1030,17 @@ if ($object->id > 0) {
 				print '<input type="hidden" class="maxwidth75 right realqty" name="id_'.$obj->rowid.'_input_tmp" id="id_'.$obj->rowid.'_input_tmp" value="'.$qty_tmp.'">';
 				print '</td>';
 			} else {
+				// Real quantity
 				print '<td class="right nowraponall">';
 				print $obj->qty_view;	// qty found
 				print '</td>';
+
+				// Delta quantity
+				$dt = $obj->qty_view - $obj->qty_stock;
+				print '<td class="right expectedqty" id="id_'.$obj->rowid.'">';
+				if($dt != 0) print $dt;
+				print '</td>';
+
 				print '<td class="nowraponall right">';
 				if ($obj->fk_movement > 0) {
 					$stockmovment = new MouvementStock($db);
