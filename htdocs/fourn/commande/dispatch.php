@@ -406,11 +406,23 @@ if ($action == 'confirm_deleteline' && $confirm == 'yes' && $permissiontoreceive
 		$qty = $supplierorderdispatch->qty;
 		$entrepot = $supplierorderdispatch->fk_entrepot;
 		$product = $supplierorderdispatch->fk_product;
-		$price = price2num(GETPOST('price', 'alpha'), 'MU');
 		$comment = $supplierorderdispatch->comment;
 		$eatby = $supplierorderdispatch->eatby;
 		$sellby = $supplierorderdispatch->sellby;
 		$batch = $supplierorderdispatch->batch;
+
+		if (!empty($conf->global->SUPPLIER_ORDER_CAN_UPDATE_BUYINGPRICE_DURING_RECEIPT)) {
+			$price = price2num(GETPOST('price', 'alpha'), 'MU');
+		}else{
+			$cfl = new CommandeFournisseurLigne($db);
+			$ret = $cfl->fetch($supplierorderdispatch->fk_commandefourndet);
+			if($ret > 0){
+				$price = $cfl->subprice;
+				$price = price2num($price * (1 - ($cfl->remise_percent / 100.0)), 'MU');
+			}else{
+				$price = "0";
+			}
+		}
 
 		$result = $supplierorderdispatch->delete($user);
 	}

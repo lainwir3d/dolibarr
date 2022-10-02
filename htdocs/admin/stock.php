@@ -222,6 +222,26 @@ if (!empty($conf->facture->enabled)) {
 print "</td>\n</tr>\n";
 $found++;
 
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans("DeStockOnCreditBill").'</td>';
+print '<td class="right">';
+if (!empty($conf->facture->enabled))
+{
+    if ($conf->use_javascript_ajax) {
+        print ajax_constantonoff('STOCK_CALCULATE_ON_CREDIT_BILL');
+    } else {
+        $arrval = array('0' => $langs->trans("No"), '1' => $langs->trans("Yes"));
+        print $form->selectarray("STOCK_CALCULATE_ON_CREDIT_BILL", $arrval, $conf->global->STOCK_CALCULATE_ON_CREDIT_BILL);
+    }
+}
+else
+{
+    print $langs->trans("ModuleMustBeEnabledFirst", $langs->transnoentitiesnoconv("Module30Name"));
+}
+print "</td>\n</tr>\n";
+$found++;
+
+
 
 print '<tr class="oddeven">';
 print '<td>'.$langs->trans("DeStockOnValidateOrder").'</td>';
