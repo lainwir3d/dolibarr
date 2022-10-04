@@ -242,14 +242,26 @@ $num = 0;
 
 $title = $langs->trans('StockAtDate');
 
+if (!empty($conf->global->PRODUIT_MULTIPRICES) && !empty($conf->global->PRICE_LEVEL_FOR_WAREHOUSE_SELL_PRICE)){
+	$sqlmultiprice .= 'SELECT price FROM '.MAIN_DB_PREFIX.'product_price WHERE fk_product=p.rowid AND price_level='.$conf->global->PRICE_LEVEL_FOR_WAREHOUSE_SELL_PRICE.' ORDER BY date_price DESC LIMIT 1';
+}
+
+
 $sql = 'SELECT p.rowid, p.ref, p.label, p.description, p.price,';
-$sql .= ' p.price_ttc, p.price_base_type, p.fk_product_type, p.desiredstock, p.seuil_stock_alerte,';
+$sql .= ' p.price_ttc, p.price_base_type, p.pmp, p.cost_price, p.fk_product_type, p.desiredstock, p.seuil_stock_alerte,';
 $sql .= ' p.tms as datem, p.duration, p.tobuy, p.stock, ';
 if ($fk_warehouse > 0) {
-	$sql .= " SUM(p.pmp * ps.reel) as estimatedvalue, SUM(p.price * ps.reel) as sellvalue";
+	$sql .= " SUM(p.pmp * ps.reel) as estimatedvalue, SUM(p.cost_price * ps.reel) AS estimated_cost_price, SUM(p.price * ps.reel) as sellvalue";
 	$sql .= ', SUM(ps.reel) as stock_reel';
 } else {
-	$sql .= " SUM(p.pmp * p.stock) as estimatedvalue, SUM(p.price * p.stock) as sellvalue";
+	$sql .= " SUM(p.pmp * p.stock) as estimatedvalue, SUM(p.cost_price * p.stock) AS estimated_cost_price, SUM(p.price * p.stock) as sellvalue";
+}
+if (!empty($conf->global->PRODUIT_MULTIPRICES) && !empty($conf->global->PRICE_LEVEL_FOR_WAREHOUSE_SELL_PRICE)){
+	if ($fk_warehouse > 0) {
+		$sql .= ', ('.$sqlmultiprice.') AS multiprice, ('.$sqlmultiprice.') * ps.reel AS sellvalue_multiprice';
+	} else {
+		$sql .= ', ('.$sqlmultiprice.') AS multiprice, ('.$sqlmultiprice.') * p.stock AS sellvalue_multiprice';
+	}
 }
 // Add fields from hooks
 $parameters = array();
@@ -462,6 +474,7 @@ if ($mode == 'future') {
 } else {
 	print_liste_field_titre($stocklabel, $_SERVER["PHP_SELF"], '', $param, '', '', $sortfield, $sortorder, 'right ');
 	print_liste_field_titre("EstimatedStockValue", $_SERVER["PHP_SELF"], "estimatedvalue", '', $param, '', $sortfield, $sortorder, 'right ', $langs->trans("AtDate"), 1);
+	print_liste_field_titre("EstimatedStockCostPrice", $_SERVER["PHP_SELF"], "estimatedvalue", '', $param, '', $sortfield, $sortorder, 'right ', $langs->trans("AtDate"), 1);
 	print_liste_field_titre("EstimatedStockValueSell", $_SERVER["PHP_SELF"], "", '', $param, '', $sortfield, $sortorder, 'right ', $langs->trans("AtDate"), 1);
 	print_liste_field_titre('', $_SERVER["PHP_SELF"]);
 	print_liste_field_titre('CurrentStock', $_SERVER["PHP_SELF"], $fieldtosortcurrentstock, $param, '', '', $sortfield, $sortorder, 'right ');
@@ -476,6 +489,8 @@ print $hookmanager->resPrint;
 print "</tr>\n";
 
 $totalbuyingprice = 0;
+$totalcostprice = 0;
+$totalsellprice = 0;
 
 $i = 0;
 while ($i < ($limit ? min($num, $limit) : $num)) {
@@ -564,18 +579,41 @@ while ($i < ($limit ? min($num, $limit) : $num)) {
 
 			// PMP value
 			print '<td class="right">';
-			if (price2num($objp->estimatedvalue, 'MT')) {
-				print price(price2num($objp->estimatedvalue, 'MT'), 1);
+			//if (price2num($objp->estimatedvalue, 'MT')) {
+			//	print price(price2num($objp->estimatedvalue, 'MT'), 1);
+			if (price2num($objp->pmp * $stock, 'MT')) {
+				print price(price2num($objp->pmp * $stock, 'MT'), 1);
 			} else {
 				print '';
 			}
-			$totalbuyingprice += $objp->estimatedvalue;
+			//$totalbuyingprice += $objp->estimatedvalue;
+			$totalbuyingprice += $objp->pmp * $stock;
 			print '</td>';
+
+			// buyprice value
+			print '<td class="right">';
+			//if (price2num($objp->estimated_cost_price, 'MT')) {
+			//	print price(price2num($objp->estimated_cost_price, 'MT'), 1);
+			if (price2num($objp->cost_price * $stock, 'MT')) {
+				print price(price2num($objp->cost_price * $stock, 'MT'), 1);
+			} else {
+				print '';
+			}
+			//$totalcostprice += $objp->estimated_cost_price;
+			$totalcostprice += $objp->cost_price * $stock;
+			print '</td>';
+
 
 			// Selling value
 			print '<td class="right">';
 			if (empty($conf->global->PRODUIT_MULTIPRICES)) {
 				print price(price2num($objp->sellvalue, 'MT'), 1);
+				$totalsellprice += $objp->sellvalue;
+			} else if (!empty($conf->global->PRICE_LEVEL_FOR_WAREHOUSE_SELL_PRICE)){
+				//print price(price2num($objp->sellvalue_multiprice, 'MT'), 1);
+				//$totalsellprice += $objp->sellvalue_multiprice;
+				print price(price2num($objp->multiprice * $stock, 'MT'), 1);
+				$totalsellprice += $objp->multiprice * $stock;
 			} else {
 				$htmltext = $langs->trans("OptionMULTIPRICESIsOn");
 				print $form->textwithtooltip($langs->trans("Variable"), $htmltext);
@@ -616,7 +654,7 @@ if ($mode == 'future') {
 }
 
 print '<tr class="liste_total"><td>'.$langs->trans("Totalforthispage").'</td>';
-print '<td></td><td></td><td class="right">'.price(price2num($totalbuyingprice, 'MT')).'</td><td></td><td></td><td></td><td></td></tr>';
+print '<td></td><td></td><td class="right">'.price(price2num($totalbuyingprice, 'MT')).'<td class="right">'.price(price2num($totalcostprice, 'MT')).'<td class="right">'.price(price2num($totalsellprice, 'MT')).'</td><td></td><td></td><td></td><td></td></tr>';
 
 if (empty($date) || !$dateIsValid) {
 	print '<tr><td colspan="'.$colspan.'"><span class="opacitymedium">'.$langs->trans("EnterADateCriteria").'</span></td></tr>';

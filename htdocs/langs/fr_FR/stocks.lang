@@ -113,6 +113,7 @@ EstimatedStockValueSellShort=Valeur à la vente
 EstimatedStockValueSell=Valeur vente
 EstimatedStockValueShort=Valorisation achat (PMP)
 EstimatedStockValue=Valorisation à l'achat (PMP)
+EstimatedStockCostPrice=Valorisation à l'achat (Prix de revient)
 DeleteAWarehouse=Supprimer un entrepôt
 ConfirmDeleteWarehouse=Êtes-vous sûr de vouloir supprimer l'entrepôt <b>%s</b> ?
 PersonalStock=Stock personnel %s
