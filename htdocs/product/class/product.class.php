@@ -5396,9 +5396,9 @@ class Product extends CommonObject
 		// Stock decrease mode
 		if (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT) || !empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)) {
 			$this->stock_theorique -= ($stock_commande_client - $stock_sending_client);
-			if(!empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) { // this is not exclusive with STOCK_CALCULATE_ON_SHIPMENT(_CLOSE)
-				$this->stock_theorique -= $stock_commande_client;
-			}
+			//if(!empty($conf->global->STOCK_CALCULATE_ON_CREDIT_BILL)) { // this is wrong and doesn't work ($stock_commande_client is counted two times)
+			//	$this->stock_theorique -= $stock_commande_client;
+			//}
 
 		}elseif (!empty($conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER)) {
 			$this->stock_theorique += 0;
