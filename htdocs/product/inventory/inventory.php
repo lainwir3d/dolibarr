@@ -335,6 +335,29 @@ if (empty($reshook)) {
 	include DOL_DOCUMENT_ROOT.'/core/actions_sendmails.inc.php';*/
 
 	if (GETPOST('addline', 'alpha')) {
+
+		$sql = 'SELECT id.rowid, id.datec as date_creation, id.tms as date_modification, id.fk_inventory, id.fk_warehouse,';
+		$sql .= ' id.fk_product, id.batch, id.qty_stock, id.qty_view, id.qty_regulated';
+		$sql .= ' FROM '.MAIN_DB_PREFIX.'inventorydet as id';
+		$sql .= ' WHERE id.fk_inventory = '.((int) $object->id);
+		$sql .= ' AND id.fk_product = '.$fk_product;
+
+		$inventoryline = new InventoryLine($db);
+		$lineExists = $false;
+		$db->begin();
+		$resql = $db->query($sql);
+		if ($resql) {
+			$num = $db->num_rows($resql);
+			$i = 0;
+			if($num > 0){
+				$line = $db->fetch_object($resql);
+				if($inventoryline->fetch($line->rowid) > 0){
+					$lineExists = true;
+					//var_dump($inventoryline); die();
+				}
+			}
+		}
+
 		$qty= (GETPOST('qtytoadd') != '' ? price2num(GETPOST('qtytoadd', 'MS')) : null);
 		if ($fk_warehouse <= 0) {
 			$error++;
@@ -344,7 +367,7 @@ if (empty($reshook)) {
 			$error++;
 			setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentitiesnoconv("Product")), null, 'errors');
 		}
-		if (price2num(GETPOST('qtytoadd'), 'MS') < 0) {
+		if (!$lineExists && price2num(GETPOST('qtytoadd'), 'MS') < 0) {
 			$error++;
 			setEventMessages($langs->trans("FieldCannotBeNegative", $langs->transnoentitiesnoconv("RealQty")), null, 'errors');
 		}
@@ -368,7 +391,7 @@ if (empty($reshook)) {
 				setEventMessages($langs->trans("ErrorProductDoesNotNeedBatchNumber", $tmpproduct->ref), null, 'errors');
 			}
 		}
-		if (!$error) {
+		if (!$error && !$lineExists) {
 			$tmp = new InventoryLine($db);
 			$tmp->fk_inventory = $object->id;
 			$tmp->fk_warehouse = $fk_warehouse;
@@ -390,6 +413,31 @@ if (empty($reshook)) {
 				$_POST['batch'] = '';
 				$_POST['qtytoadd'] = '';
 			}
+		}else if(!$error){
+
+			if(($inventoryline->qty_view + ((int) $qty)) < 0){
+				$error++;
+	                        setEventMessages($langs->trans("FieldCannotBeNegative", $langs->transnoentitiesnoconv("RealQty")), null, 'errors');	
+			}else{
+				$inventoryline->qty_view += ((int) $qty); // price2num
+				$inventoryline->update($user);
+				//var_dump($fk_product); die();
+			
+				if ($result < 0) {
+					$langs->load("errors");
+					setEventMessages("Erreur inconnue lors de la mise à jour du champ", null, 'errors');
+				} else {
+					setEventMessages("Quantité ajoutée ou soustraite à la ligne existante", null);
+                	                // Clear var
+                        	        $_POST['batch'] = '';
+					$_POST['qtytoadd'] = '';
+        	                }
+			}
+		}
+		if (! $error) {
+			$db->commit();
+		} else {
+			$db->rollback();
 		}
 	}
 }
@@ -916,11 +964,16 @@ if ($object->id > 0) {
 		print '<td class="right">'.$langs->trans('PMPExpected').'</td>';
 		print '<td class="right">'.$langs->trans('ExpectedValuation').'</td>';
 		print '<td class="right">'.$form->textwithpicto($langs->trans("RealQty"), $langs->trans("InventoryRealQtyHelp")).'</td>';
+		print '<td class="right">'.$langs->trans("Delta").'</td>';
 		print '<td class="right">'.$langs->trans('PMPReal').'</td>';
 		print '<td class="right">'.$langs->trans('RealValuation').'</td>';
 	} else {
 		print '<td class="right">';
 		print $form->textwithpicto($langs->trans("RealQty"), $langs->trans("InventoryRealQtyHelp"));
+		print '</td>';
+
+		print '<td class="right">';
+		print $langs->trans("Delta");
 		print '</td>';
 	}
 	if ($object->status == $object::STATUS_DRAFT || $object->status == $object::STATUS_VALIDATED) {
@@ -968,6 +1021,7 @@ if ($object->id > 0) {
 			print '</td>';
 		}
 		// Actions
+		print '<td></td>';
 		print '<td class="center">';
 		print '<input type="submit" class="button paddingright" name="addline" value="'.$langs->trans("Add").'">';
 		print '</td>';
@@ -983,7 +1037,6 @@ if ($object->id > 0) {
 
 	$cacheOfProducts = array();
 	$cacheOfWarehouses = array();
-
 	//$sql = '';
 	$resql = $db->query($sql);
 	if ($resql) {
@@ -1054,9 +1107,9 @@ if ($object->id > 0) {
 			print '<input type="hidden" name="stock_qty_'.$obj->rowid.'" value="'.$valuetoshow.'">';
 			print '</td>';
 
-			// Real quantity
 			if ($object->status == $object::STATUS_DRAFT || $object->status == $object::STATUS_VALIDATED) {
-				$qty_view = GETPOST("id_".$obj->rowid) && price2num(GETPOST("id_".$obj->rowid), 'MS') >= 0 ? GETPOST("id_".$obj->rowid) : $obj->qty_view;
+				//$qty_view = GETPOST("id_".$obj->rowid) && price2num(GETPOST("id_".$obj->rowid), 'MS') >= 0 ? GETPOST("id_".$obj->rowid) : $obj->qty_view;
+				$qty_view = $obj->qty_view;
 
 				//if (!$hasinput && $qty_view !== null && $obj->qty_stock != $qty_view) {
 				if ($qty_view != '') {
@@ -1083,6 +1136,13 @@ if ($object->id > 0) {
 					print '<input type="text" class="maxwidth50 right realqty" name="id_'.$obj->rowid.'" id="id_'.$obj->rowid.'_input" value="'.$qty_view.'">';
 					print '</td>';
 
+					// Delta quantity
+					$dt = $obj->qty_view - $obj->qty_stock;
+					print '<td class="maxwidth75 right deltaqty" id="id_'.$obj->rowid.'">';
+					if($dt != 0) print $dt;
+					print '</td>';
+
+
 					//PMP Real
 					print '<td class="right">';
 
@@ -1105,6 +1165,13 @@ if ($object->id > 0) {
 					print '</a>';
 					print '<input type="text" class="maxwidth50 right realqty" name="id_'.$obj->rowid.'" id="id_'.$obj->rowid.'_input" value="'.$qty_view.'">';
 					print '</td>';
+
+					// Delta quantity
+					$dt = $obj->qty_view - $obj->qty_stock;
+					print '<td class="maxwidth75 right deltaqty" id="id_'.$obj->rowid.'">';
+					if($dt != 0) print $dt;
+					print '</td>';
+
 				}
 
 				// Picto delete line
@@ -1130,6 +1197,12 @@ if ($object->id > 0) {
 					print $obj->qty_view;	// qty found
 					print '</td>';
 
+					// Delta quantity
+					$dt = $obj->qty_view - $obj->qty_stock;
+					print '<td class="right expectedqty" id="id_'.$obj->rowid.'">';
+					if($dt != 0) print $dt;
+					print '</td>';
+
 					//PMP Real
 					print '<td class="right">';
 					if (! empty($obj->pmp_real)) $pmp_real = $obj->pmp_real;
@@ -1148,7 +1221,14 @@ if ($object->id > 0) {
 					print '<td class="right nowraponall">';
 					print $obj->qty_view;	// qty found
 					print '</td>';
+
+					// Delta quantity
+					$dt = $obj->qty_view - $obj->qty_stock;
+					print '<td class="right expectedqty" id="id_'.$obj->rowid.'">';
+					if($dt != 0) print $dt;
+					print '</td>';
 				}
+				print '<td class="nowraponall right">';
 				if ($obj->fk_movement > 0) {
 					$stockmovment = new MouvementStock($db);
 					$stockmovment->fetch($obj->fk_movement);
