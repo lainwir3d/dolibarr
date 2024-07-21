@@ -3186,7 +3186,7 @@ class Product extends CommonObject
 
 			// If stock decrease is on invoice validation, the theorical stock continue to
 			// count the orders to ship in theorical stock when some are already removed by invoice validation.
-			if ($forVirtualStock && getDolGlobalString('STOCK_CALCULATE_ON_BILL')) {
+			if ($forVirtualStock && (getDolGlobalString('STOCK_CALCULATE_ON_BILL')) || (getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL'))) {
 				if (getDolGlobalString('DECREASE_ONLY_UNINVOICEDPRODUCTS')) {
 					// If option DECREASE_ONLY_UNINVOICEDPRODUCTS is on, we make a compensation but only if order not yet invoice.
 					$adeduire = 0;
@@ -3194,7 +3194,12 @@ class Product extends CommonObject
 					$sql .= " JOIN ".$this->db->prefix()."facture as f ON fd.fk_facture = f.rowid";
 					$sql .= " JOIN ".$this->db->prefix()."element_element as el ON ((el.fk_target = f.rowid AND el.targettype = 'facture' AND sourcetype = 'commande') OR (el.fk_source = f.rowid AND el.targettype = 'commande' AND sourcetype = 'facture'))";
 					$sql .= " JOIN ".$this->db->prefix()."commande as c ON el.fk_source = c.rowid";
-					$sql .= " WHERE c.fk_statut IN (".$this->db->sanitize($filtrestatut).") AND c.facture = 0 AND fd.fk_product = ".((int) $this->id);
+
+					if (getDolGlobalString('STOCK_CALCULATE_ON_BILL')) {
+						$sql .= " WHERE c.fk_statut IN (".$this->db->sanitize($filtrestatut).") AND c.facture = 0 AND fd.fk_product = ".((int) $this->id);
+					} else if (getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL')) {
+						$sql .= " WHERE c.fk_statut IN (".$this->db->sanitize($filtrestatut).") AND c.facture = 0 AND fd.fk_product = ".((int) $this->id)." AND f.type = ".Facture::TYPE_CREDIT_NOTE;
+					}
 
 					dol_syslog(__METHOD__.":: sql $sql", LOG_NOTICE);
 					$resql = $this->db->query($sql);
@@ -5844,7 +5849,7 @@ class Product extends CommonObject
 			$this->stock_theorique -= ($stock_commande_client - $stock_sending_client);
 		} elseif (getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER')) {
 			$this->stock_theorique += 0;
-		} elseif (getDolGlobalString('STOCK_CALCULATE_ON_BILL')) {
+		} elseif (getDolGlobalString('STOCK_CALCULATE_ON_BILL') || getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL')) {
 			$this->stock_theorique -= $stock_commande_client;
 		}
 		// Stock Increase mode

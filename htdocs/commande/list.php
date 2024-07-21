@@ -1404,7 +1404,7 @@ if ($massaction == 'createbills') {
 	print $langs->trans('ValidateInvoices');
 	print '</td>';
 	print '<td>';
-	if (isModEnabled('stock') && getDolGlobalString('STOCK_CALCULATE_ON_BILL')) {
+	if (isModEnabled('stock') && (getDolGlobalString('STOCK_CALCULATE_ON_BILL') || getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL'))) {
 		print $form->selectyesno('validate_invoices', 0, 1, 1);
 		$langs->load("errors");
 		print ' ('.$langs->trans("WarningAutoValNotPossibleWhenStockIsDecreasedOnInvoiceVal").')';

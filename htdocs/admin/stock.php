@@ -241,6 +241,26 @@ if (isModEnabled('facture')) {
 print "</td>\n</tr>\n";
 $found++;
 
+print '<!-- STOCK_CALCULATE_ON_CREDIT_BILL -->';
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans("DeStockOnCreditBill").'</td>';
+print '<td class="right">';
+if (isModEnabled('facture')) {
+	if ($conf->use_javascript_ajax) {
+		if ($disabled) {
+			print img_picto($langs->trans("Disabled"), 'off', 'class="opacitymedium"');
+		} else {
+			print ajax_constantonoff('STOCK_CALCULATE_ON_CREDIT_BILL', array(), null, 0, 0, 0, 2, 1, 0, '', '', 'reposition');
+		}
+	} else {
+		$arrval = array('0' => $langs->trans("No"), '1' => $langs->trans("Yes"));
+		print $form->selectarray("STOCK_CALCULATE_ON_CREDIT_BILL", $arrval, $conf->global->STOCK_CALCULATE_ON_CREDIT_BILL);
+	}
+} else {
+	print '<span class="opacitymedium">'.$langs->trans("ModuleMustBeEnabledFirst", $langs->transnoentitiesnoconv("Module30Name")).'</span>';
+}
+print "</td>\n</tr>\n";
+$found++;
 
 print '<!-- STOCK_CALCULATE_ON_VALIDATE_ORDER -->';
 print '<tr class="oddeven">';

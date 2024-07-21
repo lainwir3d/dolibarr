@@ -2841,7 +2841,11 @@ class Facture extends CommonInvoice
 			}
 
 			// If we decrease stock on invoice validation, we increase back if a warehouse id was provided
-			if ($this->type != self::TYPE_DEPOSIT && $result >= 0 && isModEnabled('stock') && getDolGlobalString('STOCK_CALCULATE_ON_BILL') && $idwarehouse != -1) {
+			if (($result >= 0) && isModEnabled('stock') && ($idwarehouse != -1) && 
+                (
+                    ($this->type != self::TYPE_DEPOSIT && getDolGlobalString('STOCK_CALCULATE_ON_BILL')) ||
+                    ($this->type == self::TYPE_CREDIT_NOTE && getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL'))
+                )) {
 				require_once DOL_DOCUMENT_ROOT.'/product/stock/class/mouvementstock.class.php';
 				$langs->load("agenda");
 
@@ -3359,7 +3363,11 @@ class Facture extends CommonInvoice
 				$result = $this->thirdparty->setAsCustomer();
 
 				// If active we decrement the main product and its components at invoice validation
-				if ($this->type != self::TYPE_DEPOSIT && $result >= 0 && isModEnabled('stock') && getDolGlobalString('STOCK_CALCULATE_ON_BILL') && $idwarehouse > 0) {
+				if (($result >= 0) && isModEnabled('stock') && ($idwarehouse > 0) && 
+                    (
+                        ($this->type != self::TYPE_DEPOSIT && getDolGlobalString('STOCK_CALCULATE_ON_BILL')) ||
+                        ($this->type == self::TYPE_CREDIT_NOTE && getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL'))
+                    )) {
 					require_once DOL_DOCUMENT_ROOT.'/product/stock/class/mouvementstock.class.php';
 					$langs->load("agenda");
 
@@ -3682,7 +3690,11 @@ class Facture extends CommonInvoice
 			}
 
 			// If we decrease stock on invoice validation, we increase back
-			if ($this->type != self::TYPE_DEPOSIT && $result >= 0 && isModEnabled('stock') && getDolGlobalString('STOCK_CALCULATE_ON_BILL')) {
+			if (($result >= 0) && isModEnabled('stock') && 
+                (
+                    ($this->type != self::TYPE_DEPOSIT && getDolGlobalString('STOCK_CALCULATE_ON_BILL')) ||
+                    ($this->type == self::TYPE_CREDIT_NOTE && getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL'))
+                )) {
 				require_once DOL_DOCUMENT_ROOT.'/product/stock/class/mouvementstock.class.php';
 				$langs->load("agenda");
 
