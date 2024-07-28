@@ -652,7 +652,7 @@ if (empty($reshook)) {
 		$object->fetch_thirdparty();
 
 		// Check for warehouse
-		if (($object->type != Facture::TYPE_DEPOSIT && getDolGlobalString('STOCK_CALCULATE_ON_BILL') || ($object->type == Facture::TYPE_CREDIT_NOTE && getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL'))) {
+		if (($object->type != Facture::TYPE_DEPOSIT && getDolGlobalString('STOCK_CALCULATE_ON_BILL')) || ($object->type == Facture::TYPE_CREDIT_NOTE && getDolGlobalString('STOCK_CALCULATE_ON_CREDIT_BILL'))) {
 			$qualified_for_stock_change = 0;
 			if (!getDolGlobalString('STOCK_SUPPORTS_SERVICES')) {
 				$qualified_for_stock_change = $object->hasProductsOrServices(2);
