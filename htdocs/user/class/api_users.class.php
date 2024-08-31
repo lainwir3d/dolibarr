@@ -360,8 +360,9 @@ class Users extends DolibarrApi
 	 */
 	public function put($id, $request_data = null)
 	{
-		// Check user authorization
-		if (!DolibarrApiAccess::$user->hasRight('user', 'user', 'creer') && empty(DolibarrApiAccess::$user->admin)) {
+		// Quick check of user authorization
+		//
+		if (!DolibarrApiAccess::$user->hasRight('user', 'user', 'creer') && empty(DolibarrApiAccess::$user->admin) && !DolibarrApiAccess::$user->hasRight('user', 'self', 'creer') && !DolibarrApiAccess::$user->hasRight('user', 'self', 'password')) {
 			throw new RestException(401, "User update not allowed");
 		}
 
@@ -374,6 +375,8 @@ class Users extends DolibarrApi
 			throw new RestException(401, 'Access not allowed for login '.DolibarrApiAccess::$user->login);
 		}
 
+		// Make sure that we have necessary access rights for all fields before starting to update those
+		//
 		foreach ($request_data as $field => $value) {
 			if (in_array($field, array('pass_crypted', 'pass_indatabase', 'pass_indatabase_crypted', 'pass_temp', 'api_key'))) {
 				// This properties can't be set/modified with API
@@ -382,6 +385,14 @@ class Users extends DolibarrApi
 			if ($field == 'id') {
 				continue;
 			}
+			if ($field != 'pass') {
+				if ($this->useraccount->id != DolibarrApiAccess::$user->id && empty(DolibarrApiAccess::$user->rights->user->user->creer)) {
+                                        throw new RestException(401, 'You are not allowed to modify informations of other users');
+				}
+				if ($this->useraccount->id == DolibarrApiAccess::$user->id && empty(DolibarrApiAccess::$user->rights->user->self->creer)) {
+                                        throw new RestException(401, 'You are not allowed to modify your own informations');
+                                }
+			}
 			if ($field == 'pass') {
 				if ($this->useraccount->id != DolibarrApiAccess::$user->id && empty(DolibarrApiAccess::$user->rights->user->user->password)) {
 					throw new RestException(401, 'You are not allowed to modify password of other users');
@@ -389,11 +400,6 @@ class Users extends DolibarrApi
 				if ($this->useraccount->id == DolibarrApiAccess::$user->id && empty(DolibarrApiAccess::$user->rights->user->self->password)) {
 					throw new RestException(401, 'You are not allowed to modify your own password');
 				}
-			}
-			if ($field === 'caller') {
-				// Add a mention of caller so on trigger called after action, we can filter to avoid a loop if we try to sync back again whith the caller
-				$this->useraccount->context['caller'] = $request_data['caller'];
-				continue;
 			}
 
 			if (DolibarrApiAccess::$user->admin) {	// If user for API is admin
@@ -408,6 +414,17 @@ class Users extends DolibarrApi
 			if ($field == 'entity' && $value != $this->useraccount->entity) {
 				throw new RestException(401, 'Changing entity of a user using the APIs is not possible');
 			}
+		}
+
+		// Actually modify fields
+		//
+		foreach ($request_data as $field => $value) {
+
+			if ($field === 'caller') {
+				// Add a mention of caller so on trigger called after action, we can filter to avoid a loop if we try to sync back again whith the caller
+				$this->useraccount->context['caller'] = $request_data['caller'];
+				continue;
+			}
 
 			// The status must be updated using setstatus() because it
 			// is not handled by the update() method.
@@ -416,9 +433,10 @@ class Users extends DolibarrApi
 				if ($result < 0) {
 					throw new RestException(500, 'Error when updating status of user: '.$this->useraccount->error);
 				}
-			} else {
-				$this->useraccount->$field = $value;
+				continue;
 			}
+
+			$this->useraccount->$field = $value;
 		}
 
 		// If there is no error, update() returns the number of affected
