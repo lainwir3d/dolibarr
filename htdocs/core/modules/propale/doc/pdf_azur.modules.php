@@ -339,9 +339,9 @@ class pdf_azur extends ModelePDFPropales
 
 				// Set $this->atleastonediscount if you have at least one discount
 				for ($i = 0; $i < $nblines; $i++) {
-					if ($object->lines[$i]->remise_percent) {
-						$this->atleastonediscount++;
-					}
+                    if ($object->lines[$i]->array_options["options_remise_client_hthd"]) {
+                        $this->atleastonediscount++;
+                    }
 				}
 				if (empty($this->atleastonediscount)) {
 					$delta = ($this->postotalht - $this->posxdiscount);
@@ -589,9 +589,9 @@ class pdf_azur extends ModelePDFPropales
 
 					// Discount on line
 					$pdf->SetXY($this->posxdiscount, $curY);
-					if ($object->lines[$i]->remise_percent) {
+					if ($object->lines[$i]->array_options["options_remise_client_hthd"]) {
 						$pdf->SetXY($this->posxdiscount - 2, $curY);
-						$remise_percent = pdf_getlineremisepercent($object, $i, $outputlangs, $hidedetails);
+                        $remise_percent = $object->lines[$i]->array_options["options_remise_client_hthd"] . "%";
 						$pdf->MultiCell($this->postotalht - $this->posxdiscount + 2, 3, $remise_percent, 0, 'R');
 					}
 
