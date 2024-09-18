@@ -20,6 +20,7 @@ use Luracast\Restler\RestException;
 
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture-rec.class.php';
+require_once DOL_DOCUMENT_ROOT.'/compta/paiement/class/paiement.class.php';
 
 
 /**
@@ -1364,6 +1365,37 @@ class Invoices extends DolibarrApi
 
 		return $result;
 	}
+
+
+   /**
+    * Get next payment reference
+    *
+    * @param       int   $socid    Id of thirdparty
+    * @return      string
+    *
+    * @url     GET payments/nextref/{socid}
+    *
+    * @throws RestException 400
+    * @throws RestException 403
+    * @throws RestException 404
+    * @throws RestException 405
+    */
+    public function getPaymentsNextRef($socid)
+    {
+        if (!DolibarrApiAccess::$user->rights->facture->creer) {
+            throw new RestException(403);
+        }
+
+        $soc = new Societe($this->db);
+        $result = $soc->fetch($socid);
+        if ($result < 0) {
+            throw new RestException(404, 'Thirdparty not found');
+        }
+
+        $paymentobj = new Paiement($this->db);
+        $paymentobj->datepaye = dol_now();
+        return $paymentobj->getNextNumRef($soc, "last");
+    }
 
 
 	/**
