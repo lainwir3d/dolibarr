@@ -257,6 +257,12 @@ class Products extends DolibarrApi
 
 							if (is_array($product_static->stock_warehouse)) {
 								foreach ($product_static->stock_warehouse as $keytmp => $valtmp) {
+									// Warehouse 27 holds in-transit stock and is excluded from sellable totals.
+									if ($keytmp == 27) {
+										$product_static->stock_theorique -= $valtmp->real;
+										$product_static->stock_reel -= $valtmp->real;
+									}
+
 									if (isset($product_static->stock_warehouse[$keytmp]->detail_batch) && is_array($product_static->stock_warehouse[$keytmp]->detail_batch)) {
 										foreach ($product_static->stock_warehouse[$keytmp]->detail_batch as $keytmp2 => $valtmp2) {
 											unset($product_static->stock_warehouse[$keytmp]->detail_batch[$keytmp2]->db);
