@@ -801,6 +801,7 @@ if ($id > 0 || !empty($ref)) {
 									// or nb of line that remain to dispatch if SUPPLIER_ORDER_DISABLE_STOCK_DISPATCH_WHEN_TOTAL_REACHED is on.
 
 			$conf->cache['product'] = array();
+		$conf->cache['reception'] = array();
 
 			// Loop on each source order line (may be more or less than current number of lines in llx_commande_fournisseurdet)
 			while ($i < $num) {
@@ -1249,8 +1250,17 @@ if ($id > 0 || !empty($ref)) {
 				if (isModEnabled("reception")) {
 					print '<td class="nowraponall">';
 					if (!empty($objp->fk_reception)) {
-						$reception = new Reception($db);
-						$reception->fetch($objp->fk_reception);
+						// Cache the reception: a full Reception::fetch() (which
+						// reloads every reception line) per dispatch row makes
+						// this page quadratic as soon as an order carries
+						// received lines.
+						if (empty($conf->cache['reception'][$objp->fk_reception])) {
+							$reception = new Reception($db);
+							$reception->fetch($objp->fk_reception);
+							$conf->cache['reception'][$objp->fk_reception] = $reception;
+						} else {
+							$reception = $conf->cache['reception'][$objp->fk_reception];
+						}
 						print $reception->getNomUrl(1);
 					}
 
