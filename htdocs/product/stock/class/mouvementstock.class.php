@@ -532,7 +532,11 @@ class MouvementStock extends CommonObject
 					// After a stock increase
 					// Note: PMP is calculated on stock input only (type of movement = 0 or 3). If type == 0 or 3, qty should be > 0.
 					// Note: Price should always be >0 or 0. PMP should be always >0 (calculated on input)
-					if ($price > 0 || (getDolGlobalString('STOCK_UPDATE_AWP_EVEN_WHEN_ENTRY_PRICE_IS_NULL') && $price == 0 && in_array($this->origin_type, array('order_supplier', 'invoice_supplier')))) {
+					// Spirits Run: receptions carry the stock entries of the Reception circuit; a
+					// price-0 promotional line must weigh on the PMP exactly like a direct supplier
+					// order dispatch does (STOCK_UPDATE_AWP_EVEN_WHEN_ENTRY_PRICE_IS_NULL), otherwise
+					// the live PMP diverges from the module's movement-log replay after every container.
+					if ($price > 0 || (getDolGlobalString('STOCK_UPDATE_AWP_EVEN_WHEN_ENTRY_PRICE_IS_NULL') && $price == 0 && in_array($this->origin_type, array('order_supplier', 'invoice_supplier', 'reception')))) {
 						$oldqtytouse = ($oldqty >= 0 ? $oldqty : 0);
 						// We make a test on oldpmp>0 to avoid to use normal rule on old data with no pmp field defined
 						if ($oldpmp > 0) {
