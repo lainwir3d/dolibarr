@@ -254,15 +254,10 @@ class Products extends DolibarrApi
 					if ($product_static->fetch($obj->rowid)) {
 						if (!empty($includestockdata) && DolibarrApiAccess::$user->rights->stock->lire) {
 							$product_static->load_stock();
+							$this->_adjustSellableStock($product_static);
 
 							if (is_array($product_static->stock_warehouse)) {
 								foreach ($product_static->stock_warehouse as $keytmp => $valtmp) {
-									// Warehouse 27 holds in-transit stock and is excluded from sellable totals.
-									if ($keytmp == 27) {
-										$product_static->stock_theorique -= $valtmp->real;
-										$product_static->stock_reel -= $valtmp->real;
-									}
-
 									if (isset($product_static->stock_warehouse[$keytmp]->detail_batch) && is_array($product_static->stock_warehouse[$keytmp]->detail_batch)) {
 										foreach ($product_static->stock_warehouse[$keytmp]->detail_batch as $keytmp2 => $valtmp2) {
 											unset($product_static->stock_warehouse[$keytmp]->detail_batch[$keytmp2]->db);
@@ -2073,6 +2068,7 @@ class Products extends DolibarrApi
 
 		if (!empty($includestockdata) && DolibarrApiAccess::$user->rights->stock->lire) {
 			$this->product->load_stock($includestockdata);
+			$this->_adjustSellableStock($this->product);
 
 			if (is_array($this->product->stock_warehouse)) {
 				foreach ($this->product->stock_warehouse as $keytmp => $valtmp) {
@@ -2110,5 +2106,52 @@ class Products extends DolibarrApi
 		}
 
 		return $this->_cleanObjectDatas($this->product);
+	}
+
+	/**
+	 * Adjust the stock figures reported to the shop apps: sellable stock is
+	 * SR (warehouse 2) plus the bonded SR-EFS (warehouse 29), folded into
+	 * the SR entry so the apps gating on warehouse 2 allow ordering bonded
+	 * stock. Every other warehouse (in-transit 27, the OSEZNATUREL
+	 * placeholders 26, customer caves) is excluded from the API totals,
+	 * preserving the virtual-stock delta (stock_theorique - stock_reel).
+	 * The Dolibarr web UI is not affected: it reads Product::load_stock()
+	 * directly.
+	 *
+	 * @param  Product $product Product with stock loaded (load_stock)
+	 * @return void
+	 */
+	private function _adjustSellableStock($product)
+	{
+		if (!is_array($product->stock_warehouse)) {
+			return;
+		}
+
+		$sellable = 0.0;
+		if (isset($product->stock_warehouse[2])) {
+			$sellable += (float) $product->stock_warehouse[2]->real;
+		}
+		if (isset($product->stock_warehouse[29])) {
+			$sellable += (float) $product->stock_warehouse[29]->real;
+		}
+
+		// Exclude every other warehouse from the reported totals.
+		$adjust = (float) $product->stock_reel - $sellable;
+		if ($adjust != 0.0) {
+			$product->stock_reel -= $adjust;
+			$product->stock_theorique -= $adjust;
+		}
+
+		// Fold SR-EFS into the SR entry so the apps reading warehouse 2
+		// see the combined sellable stock.
+		if (isset($product->stock_warehouse[29])) {
+			if (isset($product->stock_warehouse[2])) {
+				$product->stock_warehouse[2]->real += $product->stock_warehouse[29]->real;
+			} else {
+				$product->stock_warehouse[2] = new stdClass();
+				$product->stock_warehouse[2]->real = $product->stock_warehouse[29]->real;
+			}
+			unset($product->stock_warehouse[29]);
+		}
 	}
 }
